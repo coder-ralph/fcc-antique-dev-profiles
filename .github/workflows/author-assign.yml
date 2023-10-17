@@ -1,13 +1,26 @@
-name: 'Author Assign'
+name: Add Labels to PR Author
 
 on:
-  pull_request_target:
-    types: [opened, reopened]
+  pull_request:
+    types:
+      - opened
 
 jobs:
-  assign-author:
+  add-label:
     runs-on: ubuntu-latest
     steps:
-      - uses: toshimaru/auto-author-assign@v1.1.0
+      - name: Check if PR is from the same user
+        id: check-user
+        run: |
+          if [[ "${{ github.event.pull_request.user.login }}" == "${{ github.actor }}" ]]; then
+            echo "::set-output name=is_same_user::true"
+          else
+            echo "::set-output name=is_same_user::false"
+          fi
+
+      - name: Add Labels to PR Author
+        if: steps.check-user.outputs.is_same_user == 'true'
+        uses: actions/labeler@v4
         with:
-          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: 'hacktoberfest, hacktoberfest-accepted'
